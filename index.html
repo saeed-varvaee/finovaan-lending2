@@ -1,476 +1,231 @@
-<!doctype html>
-<html lang="fa" dir="rtl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>فینووان — آموزش و تحلیل مالی</title>
-  <meta name="description" content="فینووان: آموزش‌های کوتاه و عملیاتی در حوزه مالی، بانک و فین‌تک. ویدئو، تحلیل و منابع رویدادی." />
-  <meta name="theme-color" content="#0b1220" />
-  <link rel="canonical" href="https://finovaan.example/" />
-  <meta property="og:site_name" content="Finovaan">
-  <meta property="og:title" content="فینووان — آموزش و تحلیل مالی">
-  <meta property="og:description" content="آموزش‌های کوتاه عملیاتی درباره مالی، بانک و فین‌تک.">
-  <meta property="og:image" content="https://finovaan.example/assets/FINOVAAN-LOGO.png">
-  <meta property="og:url" content="https://finovaan.example/">
-  <meta name="twitter:card" content="summary_large_image">
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/assets/favicon.ico">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Use system fonts for performance -->
-  <style>
-    :root{
-      --bg:#0b1220; --card:#0f1724; --muted:#9aa4b2; --accent:#4f9efc; --glass: rgba(255,255,255,0.04);
-      --radius:14px; --text: #e6eef8;
-      --container: 1100px;
+// main.js (همین فایل را در پروژه ذخیره کن)
+// نسخهٔ کامل و هماهنگ با index.html و style.css
+(function () {
+  'use strict';
+
+  /* ---------- Helpers ---------- */
+  const $ = (s, ctx = document) => ctx.querySelector(s);
+  const $$ = (s, ctx = document) => Array.from(ctx.querySelectorAll(s));
+  const safe = (fn) => { try { fn(); } catch (e) { console.warn('main.js error:', e); } };
+  const debounce = (fn, wait = 50) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); }; };
+
+  /* ---------- Keys & Config ---------- */
+  const THEME_KEY = 'finovaan:theme';
+  const LANG_KEY = 'finovaan:lang';
+  const SUBS_KEY = 'finovaan:subs';
+  const FAKE_COUNT_KEY = 'finovaan:fakecount';
+  const DEFAULT_LANG = 'fa';
+
+  /* ---------- DOM refs ---------- */
+  const yearEl = $('#year');
+  const themeBtn = $('#themeBtn');
+  const langBtn = $('#langBtn');
+  const header = document.querySelector('.site-header');
+  const hero = document.querySelector('.hero');
+  const qrModal = $('#qrModal');
+  const openQrBtn = $('#openQr');
+  const closeQrBtn = $('#closeQr');
+  const qrImg = $('#qrImg');
+  const downloadQrModalBtn = $('#downloadQrModal');
+  const shareBtn = $('#shareLink');
+  const copyLinkBtn = $('#copyLink');
+  const copyModalLinkBtn = $('#copyModalLink');
+  const subscribeForm = $('#subscribeForm');
+  const emailInput = $('#email');
+  const subscribeMsg = $('#subscribeMsg');
+  const subscribersBadge = $('#subscribersBadge');
+  const viewChannel = $('#viewChannel');
+  const featuresTitle = $('#features-title');
+
+  /* ---------- small dictionary ---------- */
+  const DICT = {
+    fa: {
+      title: 'فینووان — شفافیت مالی در یک نگاه',
+      subtitle: 'آموزش‌های کوتاه، تحلیل‌های کاربردی و منابع رویدادی برای دانشجویان و حرفه‌ای‌ها. همراه ما باشید.',
+      ctaChannel: 'دیدن کانال',
+      ctaContact: 'تماس',
+      scan: 'اسکن در رویدادها',
+      featuresTitle: 'آنچه ارائه می‌دهیم',
+      videos: 'ویدئوهای کوتاه',
+      analysis: 'تحلیل‌ها',
+      resources: 'منابع رویداد',
+      subscribed: 'با تشکر! ایمیل ثبت شد.',
+      invalidEmail: 'ایمیل معتبر وارد کنید.',
+      alreadySub: 'شما قبلاً ثبت نام کرده‌اید.',
+      copyOk: 'کپی شد'
+    },
+    en: {
+      title: 'Finovaan — Financial clarity at a glance',
+      subtitle: 'Bite-sized lessons, practical analysis and event-friendly resources for learners and practitioners.',
+      ctaChannel: 'Visit Channel',
+      ctaContact: 'Contact',
+      scan: 'Scan at events',
+      featuresTitle: 'What we offer',
+      videos: 'Short videos',
+      analysis: 'Analysis',
+      resources: 'Event resources',
+      subscribed: 'Thanks — you are subscribed!',
+      invalidEmail: 'Please enter a valid email.',
+      alreadySub: 'You are already subscribed.',
+      copyOk: 'Copied'
     }
-    [data-theme="light"]{
-      --bg:#f7f9fc; --card:#ffffff; --muted:#54606a; --accent:#1d6df6; --glass: rgba(11,18,32,0.03);
-      --text:#081423;
+  };
+
+  /* ---------- Init basics ---------- */
+  safe(() => { if (yearEl) yearEl.textContent = new Date().getFullYear(); });
+
+  // keyboard nav hint
+  document.addEventListener('keydown', (e) => { if (e.key === 'Tab') document.documentElement.classList.add('using-keyboard'); });
+
+  /* ---------- THEME ---------- */
+  function getSavedTheme() { return localStorage.getItem(THEME_KEY); }
+  function setTheme(theme) {
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem(THEME_KEY, 'light');
+      if (themeBtn) { themeBtn.textContent = '☀️'; themeBtn.setAttribute('aria-pressed', 'true'); }
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem(THEME_KEY, 'dark');
+      if (themeBtn) { themeBtn.textContent = '🌙'; themeBtn.setAttribute('aria-pressed', 'false'); }
     }
-
-    html,body{height:100%;margin:0;font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue","Noto Sans","Roboto",Tahoma,"PingFang SC","Hiragino Sans", Arial; background:linear-gradient(180deg,var(--bg), #08121a 60%); color:var(--text); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
-    .wrap{max-width:var(--container);margin:0 auto;padding:0 20px;box-sizing:border-box;}
-    .site-header{position:sticky;top:0;backdrop-filter: blur(6px);z-index:60;background: linear-gradient(180deg, rgba(0,0,0,0.28), transparent); border-bottom:1px solid rgba(255,255,255,0.03);}
-    .site-header .wrap{display:flex;align-items:center;justify-content:space-between;padding:12px 0;}
-    .brand{display:flex;align-items:center;gap:12px;}
-    .brand img{display:block;border-radius:6px;}
-    .brand-title{font-weight:700;font-size:18px;letter-spacing:0.6px}
-    .nav .controls{display:flex;align-items:center;gap:8px}
-    .chip{background:var(--glass);border:0;padding:8px 10px;border-radius:999px;color:var(--text);font-weight:600;cursor:pointer}
-    .cta{background:linear-gradient(90deg,var(--accent), #2ec4ff);color:white;padding:9px 14px;border-radius:10px;text-decoration:none;font-weight:700}
-
-    /* Hero */
-    .main{padding:28px 0 80px}
-    .hero{display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;position:relative;padding:28px 0}
-    .hero-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:18px;padding:28px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 10px 30px rgba(2,6,23,0.6)}
-    .hero-title{font-size:28px;margin:0 0 8px}
-    .hero-sub{color:var(--muted);margin:0 0 16px}
-    .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
-    .btn{display:inline-block;padding:10px 14px;border-radius:12px;text-decoration:none;background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text);font-weight:700}
-    .btn.primary{background:var(--accent);border:0;color:white}
-    .social-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
-    .social-card{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:var(--glass);text-decoration:none;color:var(--text);min-width:160px}
-    .social-card .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;background:rgba(255,255,255,0.02)}
-
-    aside.side-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:14px;align-items:center}
-    .qr-card img{width:160px;height:160px;border-radius:8px;object-fit:cover}
-    .quick-links{display:flex;gap:8px;flex-direction:column}
-    .quick-links a{background:transparent;padding:8px;border-radius:8px;text-decoration:none;color:var(--text);border:1px dashed rgba(255,255,255,0.03);display:block;text-align:center}
-
-    /* Features */
-    .features{margin-top:32px}
-    .section-title{font-size:20px;margin:0 0 18px}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-    .feature{background:var(--card);padding:16px;border-radius:12px;color:var(--text);box-shadow:0 6px 20px rgba(2,6,23,0.35)}
-    .feature h3{margin:0 0 8px}
-
-    footer.site-footer{padding:28px 0;border-top:1px solid rgba(255,255,255,0.03);margin-top:40px;background:transparent}
-    .footer-inner{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .footer-nav a{margin-left:10px;text-decoration:none;color:var(--muted)}
-
-    /* Responsive */
-    @media (max-width:900px){
-      .hero{grid-template-columns:1fr; padding:18px 0}
-      .side-card{order:2;width:100%}
-      .hero-card{order:1}
-      .grid{grid-template-columns:1fr}
-      .footer-inner{flex-direction:column;align-items:flex-start}
-    }
-
-    /* Focus and accessibility */
-    :focus{outline: none}
-    :focus-visible{outline: 3px solid rgba(79,158,252,0.6);outline-offset:3px;border-radius:8px}
-    .skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
-    .skip-link:focus{left:20px;top:10px;width:auto;height:auto;padding:8px 12px;background:#fff;color:#000;border-radius:6px;z-index:1000}
-
-    /* Modal */
-    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:200;opacity:0;pointer-events:none;transition:opacity .18s ease}
-    .modal.open{opacity:1;pointer-events:auto}
-    .modal-panel{background:var(--card);padding:20px;border-radius:12px;max-width:520px;width:95%;box-shadow:0 12px 40px rgba(2,6,23,0.6)}
-    .modal .close{background:transparent;border:0;font-size:20px;cursor:pointer;color:var(--muted)}
-
-    /* micro-interactions */
-    .copy-btn{border:0;background:transparent;padding:6px;cursor:pointer;font-weight:700}
-    .badge{display:inline-block;padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.03);color:var(--muted);font-weight:600}
-
-    /* reduced motion */
-    @media (prefers-reduced-motion: reduce){
-      *{transition:none!important;animation:none!important}
-    }
-  </style>
-</head>
-<body>
-  <a class="skip-link" href="#main">رفتن به محتوا</a>
-
-  <header class="site-header" role="banner" aria-label="هدر سایت">
-    <div class="wrap">
-      <div class="brand" role="img" aria-label="لوگوی فینووان">
-        <img src="assets/FINOVAAN-LOGO.png" alt="لوگوی فینووان" width="140" height="42" loading="lazy">
-        <span class="brand-title" id="brandTitle">فینووان</span>
-      </div>
-
-      <nav class="nav" role="navigation" aria-label="ناوبری اصلی">
-        <div class="controls" role="group" aria-label="کنترل‌ها">
-          <button id="langBtn" class="chip" aria-pressed="true" title="تغییر زبان">فارسی</button>
-          <button id="themeBtn" class="chip" aria-pressed="false" title="تغییر حالت ظاهری" aria-live="polite">🌙</button>
-          <a class="cta" id="youtubeCta" href="https://youtube.com/@finovaan" target="_blank" rel="noopener noreferrer">کانال ما</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-
-  <main id="main" class="main" tabindex="-1" role="main">
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-card" role="region" aria-labelledby="hero-title" aria-describedby="hero-desc">
-        <h1 id="hero-title" class="hero-title">فینووان — شفافیت مالی در یک نگاه</h1>
-        <p id="hero-desc" class="hero-sub">آموزش‌های کوتاه، تحلیل‌های کاربردی و منابع رویدادی برای دانشجویان و حرفه‌ای‌ها. همراه ما باشید.</p>
-
-        <div class="hero-actions" role="group" aria-label="دکمه‌های اصلی">
-          <a class="btn primary" href="https://youtube.com/@finovaan" target="_blank" rel="noopener noreferrer" id="viewChannel">دیدن کانال</a>
-          <button class="btn" id="openQr" aria-haspopup="dialog" aria-controls="qrModal" aria-expanded="false">نمایش QR</button>
-          <a class="btn" href="https://t.me/finovaan" target="_blank" rel="noopener noreferrer">تماس</a>
-        </div>
-
-        <div class="social-row" aria-hidden="false" role="list">
-          <a class="social-card" href="https://www.linkedin.com/company/finovaan" target="_blank" rel="noopener noreferrer" aria-label="فینووان در لینکدین" role="listitem">
-            <span class="icon" aria-hidden="true">in</span>
-            <div class="meta">
-              <div class="title">LinkedIn</div>
-              <div class="sub">/company/finovaan</div>
-            </div>
-          </a>
-
-          <a class="social-card" href="https://youtube.com/@finovaan" target="_blank" rel="noopener noreferrer" aria-label="فینووان در یوتیوب" role="listitem">
-            <span class="icon" aria-hidden="true">▶</span>
-            <div class="meta">
-              <div class="title">YouTube</div>
-              <div class="sub">@finovaan</div>
-            </div>
-          </a>
-
-          <a class="social-card" href="https://www.instagram.com/finovaan" target="_blank" rel="noopener noreferrer" aria-label="فینووان در اینستاگرام" role="listitem">
-            <span class="icon" aria-hidden="true">✦</span>
-            <div class="meta">
-              <div class="title">Instagram</div>
-              <div class="sub">@finovaan</div>
-            </div>
-          </a>
-
-          <a class="social-card" href="https://t.me/finovaan" target="_blank" rel="noopener noreferrer" aria-label="فینووان در تلگرام" role="listitem">
-            <span class="icon" aria-hidden="true">✉</span>
-            <div class="meta">
-              <div class="title">Telegram</div>
-              <div class="sub">@finovaan</div>
-            </div>
-          </a>
-        </div>
-
-        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
-          <span class="badge" id="subscribersBadge">عضو فعّال: —</span>
-          <button class="copy-btn" id="copyLink" title="کپی لینک صفحه">کپی لینک</button>
-        </div>
-      </div>
-
-      <aside class="side-card" aria-label="کد QR و لینک‌های سریع">
-        <div class="qr-card" role="group" aria-label="کد QR">
-          <img src="assets/QR-PLACEHOLDER.png" alt="کد QR فینووان" width="160" height="160" loading="lazy" id="qrImg">
-          <p class="qr-caption">اسکن در رویدادها یا <button class="copy-btn" id="downloadQr">دانلود</button></p>
-        </div>
-
-        <div class="quick-links" role="navigation" aria-label="لینک‌های سریع">
-          <a class="small" href="https://youtube.com/@finovaan" target="_blank" rel="noopener noreferrer">یوتیوب</a>
-          <a class="small" href="https://www.linkedin.com/company/finovaan" target="_blank" rel="noopener noreferrer">لینکدین</a>
-          <a class="small" href="https://t.me/finovaan" target="_blank" rel="noopener noreferrer">تلگرام</a>
-        </div>
-
-        <div style="width:100%;margin-top:6px">
-          <form id="subscribeForm" aria-label="فرم اشتراک خبرنامه">
-            <label for="email" style="display:block;margin-bottom:6px">عضو خبرنامه شو</label>
-            <div style="display:flex;gap:8px">
-              <input id="email" name="email" type="email" placeholder="ایمیل شما" aria-label="ایمیل" required style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)">
-              <button class="btn" type="submit">ثبت</button>
-            </div>
-            <div id="subscribeMsg" style="margin-top:8px;color:var(--muted);font-size:13px"></div>
-          </form>
-        </div>
-      </aside>
-    </section>
-
-    <section class="features" aria-labelledby="features-title">
-      <div class="wrap narrow">
-        <h2 id="features-title" class="section-title">آنچه ارائه می‌دهیم</h2>
-        <div class="grid" role="list">
-          <article class="feature" role="listitem">
-            <h3>ویدئوهای کوتاه</h3>
-            <p>راهنمایی‌های عملی و خلاصه برای یادگیری سریع. همچنین هر ویدئو زیرنویس و کپشن دارد.</p>
-          </article>
-          <article class="feature" role="listitem">
-            <h3>تحلیل‌ها</h3>
-            <p>تحلیل‌های عمیق با مثال‌های کاربردی در صنعت بانکی و فین‌تک و فایل‌های عملیاتی قابل دانلود.</p>
-          </article>
-          <article class="feature" role="listitem">
-            <h3>منابع رویداد</h3>
-            <p>QR و لینک‌های آماده برای اشتراک‌گذاری در همایش‌ها و ورکشاپ‌ها و یک پنل مدیریت حضور و غیاب.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer" role="contentinfo" aria-label="پاورقی">
-    <div class="wrap narrow footer-inner">
-      <img src="assets/FINOVAAN-LOGO.png" alt="لوگوی فینووان" class="logo-small" width="120" height="36" loading="lazy">
-      <nav class="footer-nav" role="navigation" aria-label="لینک‌های پاورقی">
-        <a href="https://www.linkedin.com/company/finovaan" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-        <a href="https://youtube.com/@finovaan" target="_blank" rel="noopener noreferrer">YouTube</a>
-        <a href="https://www.instagram.com/finovaan" target="_blank" rel="noopener noreferrer">Instagram</a>
-        <a href="https://t.me/finovaan" target="_blank" rel="noopener noreferrer">Telegram</a>
-      </nav>
-      <div class="copyright">© <span id="year"></span> Finovaan — تمامی حقوق محفوظ است</div>
-    </div>
-  </footer>
-
-  <!-- QR Modal -->
-  <div class="modal" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrTitle" aria-hidden="true">
-    <div class="modal-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h3 id="qrTitle">کد QR فینووان</h3>
-        <button class="close" aria-label="بستن" id="closeQr">✕</button>
-      </div>
-      <p style="color:var(--muted);margin-top:6px">این کد را می‌توانید در رویدادها نمایش دهید یا دانلود کنید.</p>
-      <div style="display:flex;gap:12px;align-items:center;margin-top:12px">
-        <img src="assets/QR-PLACEHOLDER.png" alt="کد QR فینووان" width="260" height="260" loading="lazy">
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn" id="downloadQrModal">دانلود QR</button>
-          <button class="btn" id="shareLink" aria-haspopup="true">اشتراک لینک</button>
-          <button class="btn" id="copyModalLink">کپی لینک</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Structured Data (richer) -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Finovaan",
-    "url": "https://finovaan.example/",
-    "logo": "https://finovaan.example/assets/FINOVAAN-LOGO.png",
-    "sameAs": [
-      "https://www.linkedin.com/company/finovaan",
-      "https://youtube.com/@finovaan",
-      "https://www.instagram.com/finovaan",
-      "https://t.me/finovaan"
-    ],
-    "contactPoint": [{
-      "@type": "ContactPoint",
-      "telephone": "+98-21-000000",
-      "contactType": "customer support",
-      "areaServed": "IR",
-      "availableLanguage": ["Persian","English"]
-    }],
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://finovaan.example/search?q={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
+    // soft transition class
+    document.documentElement.classList.add('theme-transitioning');
+    clearTimeout(window._fin_theme_to);
+    window._fin_theme_to = setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 420);
   }
-  </script>
 
-  <script>
-  (function(){
-    /* Basic state */
-    const themeBtn = document.getElementById('themeBtn');
-    const langBtn = document.getElementById('langBtn');
-    const brandTitle = document.getElementById('brandTitle');
-    const yearEl = document.getElementById('year');
-    const qrModal = document.getElementById('qrModal');
-    const openQr = document.getElementById('openQr');
-    const closeQr = document.getElementById('closeQr');
-    const copyLink = document.getElementById('copyLink');
-    const copyModalLink = document.getElementById('copyModalLink');
-    const downloadQr = document.getElementById('downloadQr');
-    const downloadQrModal = document.getElementById('downloadQrModal');
-    const shareLink = document.getElementById('shareLink');
-    const subscribeForm = document.getElementById('subscribeForm');
-    const emailInput = document.getElementById('email');
-    const subscribeMsg = document.getElementById('subscribeMsg');
-    const subscribersBadge = document.getElementById('subscribersBadge');
-
-    /* init */
-    yearEl.textContent = new Date().getFullYear();
-
-    // theme: read from localStorage or prefers-color-scheme
-    const savedTheme = localStorage.getItem('fin_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    themeBtn.setAttribute('aria-pressed', savedTheme === 'light');
-    themeBtn.textContent = savedTheme === 'light' ? '☀️' : '🌙';
-
-    themeBtn.addEventListener('click', ()=> {
-      const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', cur);
-      localStorage.setItem('fin_theme', cur);
-      themeBtn.setAttribute('aria-pressed', cur === 'light');
-      themeBtn.textContent = cur === 'light' ? '☀️' : '🌙';
+  safe(() => {
+    const saved = getSavedTheme();
+    if (saved) setTheme(saved === 'light' ? 'light' : 'dark');
+    else {
+      const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      setTheme(prefersLight ? 'light' : 'dark');
+    }
+    if (themeBtn) themeBtn.addEventListener('click', () => {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      setTheme(isLight ? 'dark' : 'light');
     });
+  });
 
-    // language switch (simple static swap)
-    let lang = localStorage.getItem('fin_lang') || 'fa';
-    function applyLang(){
-      if(lang === 'en'){
-        langBtn.textContent = 'English';
-        document.documentElement.lang = 'en';
-        document.documentElement.dir = 'ltr';
-        brandTitle.textContent = 'Finovaan';
-        document.getElementById('hero-title').textContent = 'Finovaan — Financial clarity at a glance';
-        document.getElementById('hero-desc').textContent = 'Short practical lessons, actionable analysis and event resources for students and professionals. Join us.';
-        document.getElementById('viewChannel').textContent = 'Watch channel';
-        document.getElementById('openQr').textContent = 'Show QR';
-        document.querySelector('#features-title').textContent = 'What we offer';
-      } else {
-        langBtn.textContent = 'فارسی';
-        document.documentElement.lang = 'fa';
-        document.documentElement.dir = 'rtl';
-        brandTitle.textContent = 'فینووان';
-        document.getElementById('hero-title').textContent = 'فینووان — شفافیت مالی در یک نگاه';
-        document.getElementById('hero-desc').textContent = 'آموزش‌های کوتاه، تحلیل‌های کاربردی و منابع رویدادی برای دانشجویان و حرفه‌ای‌ها. همراه ما باشید.';
-        document.getElementById('viewChannel').textContent = 'دیدن کانال';
-        document.getElementById('openQr').textContent = 'نمایش QR';
-        document.querySelector('#features-title').textContent = 'آنچه ارائه می‌دهیم';
-      }
-    }
-    applyLang();
-    langBtn.addEventListener('click', ()=> {
-      lang = lang === 'fa' ? 'en' : 'fa';
-      localStorage.setItem('fin_lang', lang);
-      applyLang();
-    });
-
-    // Modal controls
-    function openModal(){
-      qrModal.classList.add('open');
-      qrModal.setAttribute('aria-hidden','false');
-      document.body.style.overflow = 'hidden';
-      openQr.setAttribute('aria-expanded','true');
-      // focus trap: move focus to close
-      closeQr.focus();
-    }
-    function closeModal(){
-      qrModal.classList.remove('open');
-      qrModal.setAttribute('aria-hidden','true');
-      document.body.style.overflow = '';
-      openQr.setAttribute('aria-expanded','false');
-      openQr.focus();
-    }
-    openQr.addEventListener('click', openModal);
-    closeQr.addEventListener('click', closeModal);
-    qrModal.addEventListener('click', (e)=> { if(e.target === qrModal) closeModal(); });
-    document.addEventListener('keydown', (e)=> { if(e.key === 'Escape' && qrModal.classList.contains('open')) closeModal(); });
-
-    // copy link
-    copyLink.addEventListener('click', async ()=> {
-      try{
-        await navigator.clipboard.writeText(location.href);
-        copyFeedback(copyLink, lang === 'fa' ? 'لینک کپی شد' : 'Link copied');
-      }catch(e){ copyFeedback(copyLink, '—'); }
-    });
-    copyModalLink.addEventListener('click', async ()=> {
-      try{
-        await navigator.clipboard.writeText(location.href);
-        copyFeedback(copyModalLink, lang === 'fa' ? 'کپی شد' : 'Copied');
-      }catch(e){ copyFeedback(copyModalLink, '—'); }
-    });
-    function copyFeedback(btn, txt){
-      const prev = btn.textContent;
-      btn.textContent = txt;
-      setTimeout(()=> btn.textContent = prev, 1500);
-    }
-
-    // download QR — simple link download if image present
-    function downloadImage(imgSrc, filename='finovaan-qr.png'){
-      const a = document.createElement('a');
-      a.href = imgSrc;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }
-    downloadQr.addEventListener('click', ()=> downloadImage(document.getElementById('qrImg').src));
-    downloadQrModal.addEventListener('click', ()=> downloadImage(document.querySelector('.modal-panel img').src));
-
-    // share API fallback
-    shareLink.addEventListener('click', async ()=>{
-      const shareData = {title: document.title, text: 'Finovaan', url: location.href};
-      if(navigator.share){
-        try{ await navigator.share(shareData); } catch(e){ /* user canceled */ }
-      } else {
-        try{ await navigator.clipboard.writeText(location.href); copyFeedback(shareLink, lang === 'fa' ? 'کپی شد' : 'Copied'); } catch(e){}
+  /* ---------- LANGUAGE ---------- */
+  function getSavedLang() { return localStorage.getItem(LANG_KEY); }
+  function saveLang(l) { localStorage.setItem(LANG_KEY, l); }
+  function detectBrowserLang() {
+    const nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'fa';
+    return nav.startsWith('en') ? 'en' : 'fa';
+  }
+  function applyLanguage(lang) {
+    const dict = DICT[lang] || DICT[DEFAULT_LANG];
+    safe(() => { if ($('#hero-title')) $('#hero-title').textContent = dict.title; });
+    safe(() => { if ($('.hero-sub')) $('.hero-sub').textContent = dict.subtitle; });
+    safe(() => { if (viewChannel) viewChannel.textContent = dict.ctaChannel; });
+    safe(() => { const qr = document.querySelector('.qr-caption'); if (qr) qr.textContent = dict.scan; });
+    safe(() => { if (featuresTitle) featuresTitle.textContent = dict.featuresTitle; });
+    safe(() => {
+      const featH3 = document.querySelectorAll('.feature h3');
+      if (featH3.length >= 3) {
+        featH3[0].textContent = dict.videos;
+        featH3[1].textContent = dict.analysis;
+        featH3[2].textContent = dict.resources;
       }
     });
+    if (langBtn) { langBtn.textContent = lang === 'fa' ? 'فارسی' : 'English'; langBtn.setAttribute('aria-pressed', String(lang === 'fa')); }
+    document.documentElement.lang = (lang === 'fa' ? 'fa' : 'en');
+    document.documentElement.dir = (lang === 'fa' ? 'rtl' : 'ltr');
+    saveLang(lang);
+    updateSubscribersBadge();
+  }
 
-    // subscribe form (no backend — store in localStorage as demo)
-    const subsKey = 'fin_subs';
-    function loadSubs(){ try{ return JSON.parse(localStorage.getItem(subsKey)||'[]'); }catch(e){return[];} }
-    function saveSubs(list){ localStorage.setItem(subsKey, JSON.stringify(list)); }
-    function updateBadge(){ const n = loadSubs().length; subscribersBadge.textContent = lang === 'fa' ? `اعضا: ${n}` : `Subscribers: ${n}`; }
-    subscribeForm.addEventListener('submit', (e)=> {
-      e.preventDefault();
-      const email = emailInput.value.trim();
-      if(!email || !(/\S+@\S+\.\S+/.test(email))){
-        subscribeMsg.textContent = lang === 'fa' ? 'لطفاً یک ایمیل معتبر وارد کنید.' : 'Please enter a valid email.';
-        subscribeMsg.style.color = 'crimson';
-        return;
-      }
-      const list = loadSubs();
-      if(list.includes(email)){
-        subscribeMsg.textContent = lang === 'fa' ? 'شما قبلاً ثبت نام کرده‌اید.' : 'You are already subscribed.';
-        subscribeMsg.style.color = 'var(--muted)';
-      } else {
-        list.push(email); saveSubs(list);
-        subscribeMsg.textContent = lang === 'fa' ? 'با تشکر! ایمیل شما ثبت شد.' : 'Thanks! You are subscribed.';
-        subscribeMsg.style.color = 'limegreen';
-        emailInput.value = '';
-        updateBadge();
-      }
+  safe(() => {
+    const saved = getSavedLang();
+    const initial = saved || detectBrowserLang() || DEFAULT_LANG;
+    applyLanguage(initial);
+    if (langBtn) langBtn.addEventListener('click', () => {
+      const cur = document.documentElement.lang === 'fa' ? 'fa' : 'en';
+      const next = cur === 'fa' ? 'en' : 'fa';
+      applyLanguage(next);
     });
-    updateBadge();
+  });
 
-    // keyboard shortcuts (/? for help, t for theme, l for language, q for QR)
-    document.addEventListener('keydown', (e)=>{
-      if(e.key === 't') themeBtn.click();
-      if(e.key === 'l') langBtn.click();
-      if(e.key === 'q') openQr.click();
-      if(e.key === '/' && (e.metaKey || e.ctrlKey)){ // Ctrl+/ to focus search (if existed)
+  /* ---------- Header scroll & parallax ---------- */
+  safe(() => {
+    const onScroll = debounce(() => {
+      const sc = window.scrollY || 0;
+      if (header) sc > 20 ? header.classList.add('scrolled') : header.classList.remove('scrolled');
+      if (hero) {
+        const inner = hero.querySelector('.hero-card');
+        if (inner) { const rect = hero.getBoundingClientRect(); const max = 12; const offset = Math.max(-max, Math.min(max, -rect.top * 0.03)); inner.style.transform = `translateY(${offset}px)`; }
+      }
+    }, 12);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  });
+
+  /* ---------- Modal (QR) ---------- */
+  function openModal(modal) { if (!modal) return; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; const focusable = modal.querySelector('button, [href], input, select, textarea'); if (focusable) focusable.focus(); }
+  function closeModal(modal) { if (!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
+
+  safe(() => {
+    if (openQrBtn && qrModal) openQrBtn.addEventListener('click', (e) => { e.preventDefault(); openModal(qrModal); if (openQrBtn) openQrBtn.setAttribute('aria-expanded', 'true'); });
+    if (closeQrBtn && qrModal) closeQrBtn.addEventListener('click', () => { closeModal(qrModal); if (openQrBtn) openQrBtn.setAttribute('aria-expanded', 'false'); });
+    if (qrModal) { qrModal.addEventListener('click', (ev) => { if (ev.target === qrModal) closeModal(qrModal); }); document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && qrModal.classList.contains('open')) closeModal(qrModal); }); }
+  });
+
+  safe(() => {
+    if (downloadQrModalBtn) downloadQrModalBtn.addEventListener('click', (e) => { e.preventDefault(); const src = qrImg ? qrImg.src : null; if (src) { const a = document.createElement('a'); a.href = src; a.download = 'finovaan-qr.png'; document.body.appendChild(a); a.click(); a.remove(); } });
+    if (shareBtn) shareBtn.addEventListener('click', async (e) => { e.preventDefault(); const data = { title: document.title, text: 'Finovaan', url: location.href }; if (navigator.share) try { await navigator.share(data); } catch (_) {} else try { await navigator.clipboard.writeText(location.href); flashText(shareBtn, getDict('copyOk')); } catch (_) {} });
+    if (copyLinkBtn) copyLinkBtn.addEventListener('click', async (e) => { e.preventDefault(); try { await navigator.clipboard.writeText(location.href); flashText(copyLinkBtn, getDict('copyOk')); } catch (_) { flashText(copyLinkBtn, '—'); } });
+    if (copyModalLinkBtn) copyModalLinkBtn.addEventListener('click', async (e) => { e.preventDefault(); try { await navigator.clipboard.writeText(location.href); flashText(copyModalLinkBtn, getDict('copyOk')); } catch (_) { flashText(copyModalLinkBtn, '—'); } });
+  });
+
+  function flashText(el, txt, t = 1200) { if (!el) return; const prev = el.textContent; el.textContent = txt; setTimeout(() => el.textContent = prev, t); }
+  function getDict(k) { const lang = document.documentElement.lang === 'fa' ? 'fa' : 'en'; return (DICT[lang] && DICT[lang][k]) || ''; }
+
+  /* ---------- Subscribe demo ---------- */
+  function loadSubs() { try { return JSON.parse(localStorage.getItem(SUBS_KEY) || '[]'); } catch { return []; } }
+  function saveSubs(list) { try { localStorage.setItem(SUBS_KEY, JSON.stringify(list)); } catch (e) { console.warn(e); } }
+  function updateSubscribersBadge() { if (!subscribersBadge) return; const fake = localStorage.getItem(FAKE_COUNT_KEY) || 0; const count = Number(fake) || loadSubs().length || 0; const lang = document.documentElement.lang === 'fa' ? 'fa' : 'en'; subscribersBadge.textContent = (lang === 'fa' ? 'اعضا: ' : 'Subscribers: ') + count; }
+
+  safe(() => {
+    if (!localStorage.getItem(FAKE_COUNT_KEY)) localStorage.setItem(FAKE_COUNT_KEY, String(1245));
+    updateSubscribersBadge();
+    if (subscribeForm && emailInput) {
+      subscribeForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        emailInput.focus();
-      }
-    });
-
-    // simple analytics placeholder — non-blocking
-    setTimeout(()=> { console.log('finovaan: page ready — theme:', document.documentElement.getAttribute('data-theme')); }, 1200);
-
-    // progressive enhancement: service worker registration (optional)
-    if('serviceWorker' in navigator){
-      try{
-        navigator.serviceWorker.register('/sw.js').then(()=> console.log('sw registered')).catch(()=>{/* ignore */});
-      }catch(e){}
+        const email = (emailInput.value || '').trim();
+        const re = /\S+@\S+\.\S+/;
+        if (!re.test(email)) { if (subscribeMsg) { subscribeMsg.textContent = getDict('invalidEmail'); subscribeMsg.style.color = 'crimson'; } return; }
+        const list = loadSubs();
+        if (list.includes(email)) { if (subscribeMsg) { subscribeMsg.textContent = getDict('alreadySub'); subscribeMsg.style.color = ''; } } else {
+          list.push(email); saveSubs(list);
+          if (subscribeMsg) { subscribeMsg.textContent = getDict('subscribed'); subscribeMsg.style.color = 'limegreen'; }
+          emailInput.value = '';
+          const fake = Number(localStorage.getItem(FAKE_COUNT_KEY) || 1245) + 1;
+          localStorage.setItem(FAKE_COUNT_KEY, String(fake));
+          updateSubscribersBadge();
+        }
+      });
     }
+  });
 
-    // Accessibility: announce dynamic messages
-    // (a simple example: announce copy result)
-    // Already handled via button labels and feedback
+  /* ---------- Accessibility small fixes ---------- */
+  safe(() => { $$('.social-card').forEach(el => el.setAttribute('tabindex', '0')); });
 
-    // tiny improvement: show human-friendly count if available (simulate)
-    (function simulateSubscribers(){
-      if(!localStorage.getItem('fin_fake_count')){
-        const base = 1245; localStorage.setItem('fin_fake_count', String(base));
-      }
-      // show badge with a combination
-      subscribersBadge.textContent = (lang==='fa' ? 'اعضا: ' : 'Subscribers: ') + localStorage.getItem('fin_fake_count');
-    })();
+  /* ---------- Keyboard shortcuts ---------- */
+  safe(() => {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 't') { (themeBtn && themeBtn.click()) || setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); }
+      else if (e.key === 'l') { (langBtn && langBtn.click()) || applyLanguage(document.documentElement.lang === 'fa' ? 'en' : 'fa'); }
+      else if (e.key === 'q') { if (openQrBtn) openQrBtn.click(); }
+      else if ((e.ctrlKey || e.metaKey) && e.key === '/') { if (emailInput) { e.preventDefault(); emailInput.focus(); } }
+    });
+  });
 
-  })();
-  </script>
-</body>
-</html>
+  /* ---------- Service worker (optional) ---------- */
+  safe(() => { if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+
+  /* ---------- final init ---------- */
+  safe(() => { if (!getSavedLang()) applyLanguage(detectBrowserLang()); updateSubscribersBadge(); });
+
+})();
