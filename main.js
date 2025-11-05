@@ -1,43 +1,22 @@
-// main.js — Full-featured script for Finovaan
-// Features:
-// - footer year auto-fill
-// - theme toggle (dark/light) with localStorage + prefers-color-scheme support + smooth CSS transition toggling
-// - language toggle (fa/en) with localStorage, browser-language detection, and UI swap
-// - accessibility improvements (focus-visible hint, keyboard shortcuts, aria updates)
-// - QR modal open/close + download + share fallback
-// - subscribe form (frontend demo) with validation and localStorage persistence
-// - header scroll behavior + parallax hero effect
-// - smooth scroll polyfill for anchors (if needed)
-// - small fake-analytics + optional service worker registration
-// - helpful defensive checks so missing DOM nodes don't break execution
-// - lightweight event-debounce utility where appropriate
-
+// main.js (همین فایل را در پروژه ذخیره کن)
+// نسخهٔ کامل و هماهنگ با index.html و style.css
 (function () {
   'use strict';
 
-  /* -------------------------
-     Utilities
-  ------------------------- */
-  const $ = (sel, ctx = document) => ctx.querySelector(sel);
-  const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+  /* ---------- Helpers ---------- */
+  const $ = (s, ctx = document) => ctx.querySelector(s);
+  const $$ = (s, ctx = document) => Array.from(ctx.querySelectorAll(s));
   const safe = (fn) => { try { fn(); } catch (e) { console.warn('main.js error:', e); } };
-  const debounce = (fn, wait = 50) => {
-    let t;
-    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
-  };
+  const debounce = (fn, wait = 50) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); }; };
 
-  /* -------------------------
-     Config / keys
-  ------------------------- */
-  const THEME_KEY = 'finovaan:theme';        // 'light' or 'dark'
-  const LANG_KEY = 'finovaan:lang';          // 'fa' or 'en'
-  const SUBS_KEY = 'finovaan:subs';          // array of emails
+  /* ---------- Keys & Config ---------- */
+  const THEME_KEY = 'finovaan:theme';
+  const LANG_KEY = 'finovaan:lang';
+  const SUBS_KEY = 'finovaan:subs';
   const FAKE_COUNT_KEY = 'finovaan:fakecount';
   const DEFAULT_LANG = 'fa';
 
-  /* -------------------------
-     DOM references (may be null)
-  ------------------------- */
+  /* ---------- DOM refs ---------- */
   const yearEl = $('#year');
   const themeBtn = $('#themeBtn');
   const langBtn = $('#langBtn');
@@ -46,21 +25,19 @@
   const qrModal = $('#qrModal');
   const openQrBtn = $('#openQr');
   const closeQrBtn = $('#closeQr');
-  const qrImg = $('#qrImg') || document.querySelector('.qr-card img');
-  const downloadQrBtns = [$('#downloadQr'), $('#downloadQrModal')].filter(Boolean);
+  const qrImg = $('#qrImg');
+  const downloadQrModalBtn = $('#downloadQrModal');
   const shareBtn = $('#shareLink');
-  const copyBtns = [$('#copyLink'), $('#copyModalLink')].filter(Boolean);
+  const copyLinkBtn = $('#copyLink');
+  const copyModalLinkBtn = $('#copyModalLink');
   const subscribeForm = $('#subscribeForm');
   const emailInput = $('#email');
   const subscribeMsg = $('#subscribeMsg');
   const subscribersBadge = $('#subscribersBadge');
-  const socialCards = $$('.social-card');
-  const viewChannel = $('#viewChannel') || $('.btn.primary');
+  const viewChannel = $('#viewChannel');
   const featuresTitle = $('#features-title');
 
-  /* -------------------------
-     Small dictionary for UI swap
-  ------------------------- */
+  /* ---------- small dictionary ---------- */
   const DICT = {
     fa: {
       title: 'فینووان — شفافیت مالی در یک نگاه',
@@ -94,28 +71,15 @@
     }
   };
 
-  /* -------------------------
-     Init helpers
-  ------------------------- */
+  /* ---------- Init basics ---------- */
+  safe(() => { if (yearEl) yearEl.textContent = new Date().getFullYear(); });
 
-  // Year in footer
-  safe(() => {
-    if (yearEl) yearEl.textContent = new Date().getFullYear();
-  });
+  // keyboard nav hint
+  document.addEventListener('keydown', (e) => { if (e.key === 'Tab') document.documentElement.classList.add('using-keyboard'); });
 
-  // Ensure keyboard focus styling class toggling
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') document.documentElement.classList.add('using-keyboard');
-  });
-
-  /* -------------------------
-     THEME MANAGEMENT
-  ------------------------- */
-  function getSavedTheme() {
-    return localStorage.getItem(THEME_KEY);
-  }
+  /* ---------- THEME ---------- */
+  function getSavedTheme() { return localStorage.getItem(THEME_KEY); }
   function setTheme(theme) {
-    // theme === 'light' or 'dark'
     if (theme === 'light') {
       document.documentElement.setAttribute('data-theme', 'light');
       localStorage.setItem(THEME_KEY, 'light');
@@ -125,52 +89,38 @@
       localStorage.setItem(THEME_KEY, 'dark');
       if (themeBtn) { themeBtn.textContent = '🌙'; themeBtn.setAttribute('aria-pressed', 'false'); }
     }
-    // soft CSS transition: add class then remove after timeout
+    // soft transition class
     document.documentElement.classList.add('theme-transitioning');
-    window.clearTimeout(window._fin_theme_to);
-    window._fin_theme_to = window.setTimeout(() => {
-      document.documentElement.classList.remove('theme-transitioning');
-    }, 400);
+    clearTimeout(window._fin_theme_to);
+    window._fin_theme_to = setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 420);
   }
 
-  // Initialize theme using saved setting or prefers-color-scheme
   safe(() => {
     const saved = getSavedTheme();
-    if (saved) {
-      setTheme(saved === 'light' ? 'light' : 'dark');
-    } else {
+    if (saved) setTheme(saved === 'light' ? 'light' : 'dark');
+    else {
       const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
       setTheme(prefersLight ? 'light' : 'dark');
     }
-    if (themeBtn) {
-      themeBtn.addEventListener('click', () => {
-        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-        setTheme(isLight ? 'dark' : 'light');
-      });
-    }
+    if (themeBtn) themeBtn.addEventListener('click', () => {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      setTheme(isLight ? 'dark' : 'light');
+    });
   });
 
-  /* -------------------------
-     LANGUAGE MANAGEMENT
-  ------------------------- */
+  /* ---------- LANGUAGE ---------- */
   function getSavedLang() { return localStorage.getItem(LANG_KEY); }
   function saveLang(l) { localStorage.setItem(LANG_KEY, l); }
-
   function detectBrowserLang() {
-    const nav = navigator.languages && navigator.languages[0] ? navigator.languages[0] : navigator.language || navigator.userLanguage || 'fa';
+    const nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'fa';
     return nav.startsWith('en') ? 'en' : 'fa';
   }
-
   function applyLanguage(lang) {
     const dict = DICT[lang] || DICT[DEFAULT_LANG];
-    // hero title/sub
-    safe(() => { const heroTitle = document.getElementById('hero-title'); if (heroTitle) heroTitle.textContent = dict.title; });
-    safe(() => { const heroSub = document.querySelector('.hero-sub'); if (heroSub) heroSub.textContent = dict.subtitle; });
-    // CTAs
+    safe(() => { if ($('#hero-title')) $('#hero-title').textContent = dict.title; });
+    safe(() => { if ($('.hero-sub')) $('.hero-sub').textContent = dict.subtitle; });
     safe(() => { if (viewChannel) viewChannel.textContent = dict.ctaChannel; });
-    // qr caption
     safe(() => { const qr = document.querySelector('.qr-caption'); if (qr) qr.textContent = dict.scan; });
-    // features
     safe(() => { if (featuresTitle) featuresTitle.textContent = dict.featuresTitle; });
     safe(() => {
       const featH3 = document.querySelectorAll('.feature h3');
@@ -180,207 +130,77 @@
         featH3[2].textContent = dict.resources;
       }
     });
-    // lang button UI
-    if (langBtn) {
-      langBtn.textContent = lang === 'fa' ? 'فارسی' : 'English';
-      langBtn.setAttribute('aria-pressed', String(lang === 'fa'));
-    }
-    // direction/lang attributes
+    if (langBtn) { langBtn.textContent = lang === 'fa' ? 'فارسی' : 'English'; langBtn.setAttribute('aria-pressed', String(lang === 'fa')); }
     document.documentElement.lang = (lang === 'fa' ? 'fa' : 'en');
     document.documentElement.dir = (lang === 'fa' ? 'rtl' : 'ltr');
-
-    // subscriber badge (if present) keep label reactive
-    updateSubscribersBadge();
-
-    // persist
     saveLang(lang);
+    updateSubscribersBadge();
   }
 
-  // init language: precedence: saved -> browser -> default
   safe(() => {
     const saved = getSavedLang();
     const initial = saved || detectBrowserLang() || DEFAULT_LANG;
     applyLanguage(initial);
-    if (langBtn) {
-      langBtn.addEventListener('click', () => {
-        const cur = document.documentElement.lang === 'fa' ? 'fa' : 'en';
-        const next = cur === 'fa' ? 'en' : 'fa';
-        applyLanguage(next);
-      });
-    }
+    if (langBtn) langBtn.addEventListener('click', () => {
+      const cur = document.documentElement.lang === 'fa' ? 'fa' : 'en';
+      const next = cur === 'fa' ? 'en' : 'fa';
+      applyLanguage(next);
+    });
   });
 
-  /* -------------------------
-     HEADER SCROLL & PARALLAX
-  ------------------------- */
+  /* ---------- Header scroll & parallax ---------- */
   safe(() => {
-    let lastScroll = window.scrollY || 0;
     const onScroll = debounce(() => {
       const sc = window.scrollY || 0;
-      // header class toggle
-      if (header) {
-        if (sc > 20) header.classList.add('scrolled');
-        else header.classList.remove('scrolled');
-      }
-      // subtle hero parallax
+      if (header) sc > 20 ? header.classList.add('scrolled') : header.classList.remove('scrolled');
       if (hero) {
-        const rect = hero.getBoundingClientRect();
-        // move hero background or inner content slightly (if CSS supports transform on .hero-card)
         const inner = hero.querySelector('.hero-card');
-        if (inner) {
-          const max = 12;
-          const offset = Math.max(-max, Math.min(max, -rect.top * 0.03));
-          inner.style.transform = `translateY(${offset}px)`;
-        }
+        if (inner) { const rect = hero.getBoundingClientRect(); const max = 12; const offset = Math.max(-max, Math.min(max, -rect.top * 0.03)); inner.style.transform = `translateY(${offset}px)`; }
       }
-      lastScroll = sc;
-    }, 16);
+    }, 12);
     window.addEventListener('scroll', onScroll, { passive: true });
-    // run once
     onScroll();
   });
 
-  /* -------------------------
-     MODAL (QR) controls + share/copy/download
-  ------------------------- */
-  function openModal(modal) {
-    if (!modal) return;
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-    // focus trap simple
-    const focusable = modal.querySelector('[tabindex], button, a, input') || modal.querySelector('button');
-    if (focusable) focusable.focus();
-  }
-  function closeModal(modal) {
-    if (!modal) return;
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-  }
+  /* ---------- Modal (QR) ---------- */
+  function openModal(modal) { if (!modal) return; modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; const focusable = modal.querySelector('button, [href], input, select, textarea'); if (focusable) focusable.focus(); }
+  function closeModal(modal) { if (!modal) return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
 
   safe(() => {
-    if (openQrBtn && qrModal) {
-      openQrBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        openModal(qrModal);
-        if (openQrBtn) openQrBtn.setAttribute('aria-expanded', 'true');
-      });
-    }
-    if (closeQrBtn && qrModal) {
-      closeQrBtn.addEventListener('click', () => {
-        closeModal(qrModal);
-        if (openQrBtn) openQrBtn.setAttribute('aria-expanded', 'false');
-      });
-    }
-    if (qrModal) {
-      qrModal.addEventListener('click', (ev) => {
-        if (ev.target === qrModal) closeModal(qrModal);
-      });
-      document.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Escape' && qrModal && qrModal.classList.contains('open')) closeModal(qrModal);
-      });
-    }
-
-    // download QR
-    const downloadFn = (src) => {
-      if (!src) return;
-      const a = document.createElement('a');
-      a.href = src;
-      a.download = 'finovaan-qr.png';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    };
-    downloadQrBtns.forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const src = qrImg ? qrImg.src : null;
-        if (src) downloadFn(src);
-      });
-    });
-
-    // share fallback
-    if (shareBtn) {
-      shareBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const data = { title: document.title, text: 'Finovaan', url: location.href };
-        if (navigator.share) {
-          try { await navigator.share(data); } catch (_) { /* user canceled */ }
-        } else {
-          try { await navigator.clipboard.writeText(location.href); flashText(shareBtn, getDictText('copyOk')); } catch (_) { /* ignore */ }
-        }
-      });
-    }
-
-    // copy buttons
-    copyBtns.forEach((b) => {
-      b.addEventListener('click', async (e) => {
-        e.preventDefault();
-        try {
-          await navigator.clipboard.writeText(location.href);
-          flashText(b, getDictText('copyOk'));
-        } catch (err) {
-          flashText(b, '—');
-        }
-      });
-    });
+    if (openQrBtn && qrModal) openQrBtn.addEventListener('click', (e) => { e.preventDefault(); openModal(qrModal); if (openQrBtn) openQrBtn.setAttribute('aria-expanded', 'true'); });
+    if (closeQrBtn && qrModal) closeQrBtn.addEventListener('click', () => { closeModal(qrModal); if (openQrBtn) openQrBtn.setAttribute('aria-expanded', 'false'); });
+    if (qrModal) { qrModal.addEventListener('click', (ev) => { if (ev.target === qrModal) closeModal(qrModal); }); document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && qrModal.classList.contains('open')) closeModal(qrModal); }); }
   });
 
-  function flashText(el, txt, timeout = 1200) {
-    if (!el) return;
-    const prev = el.textContent;
-    el.textContent = txt;
-    setTimeout(() => { el.textContent = prev; }, timeout);
-  }
+  safe(() => {
+    if (downloadQrModalBtn) downloadQrModalBtn.addEventListener('click', (e) => { e.preventDefault(); const src = qrImg ? qrImg.src : null; if (src) { const a = document.createElement('a'); a.href = src; a.download = 'finovaan-qr.png'; document.body.appendChild(a); a.click(); a.remove(); } });
+    if (shareBtn) shareBtn.addEventListener('click', async (e) => { e.preventDefault(); const data = { title: document.title, text: 'Finovaan', url: location.href }; if (navigator.share) try { await navigator.share(data); } catch (_) {} else try { await navigator.clipboard.writeText(location.href); flashText(shareBtn, getDict('copyOk')); } catch (_) {} });
+    if (copyLinkBtn) copyLinkBtn.addEventListener('click', async (e) => { e.preventDefault(); try { await navigator.clipboard.writeText(location.href); flashText(copyLinkBtn, getDict('copyOk')); } catch (_) { flashText(copyLinkBtn, '—'); } });
+    if (copyModalLinkBtn) copyModalLinkBtn.addEventListener('click', async (e) => { e.preventDefault(); try { await navigator.clipboard.writeText(location.href); flashText(copyModalLinkBtn, getDict('copyOk')); } catch (_) { flashText(copyModalLinkBtn, '—'); } });
+  });
 
-  function getDictText(key) {
-    const lang = document.documentElement.lang === 'fa' ? 'fa' : 'en';
-    return (DICT[lang] && DICT[lang][key]) || '';
-  }
+  function flashText(el, txt, t = 1200) { if (!el) return; const prev = el.textContent; el.textContent = txt; setTimeout(() => el.textContent = prev, t); }
+  function getDict(k) { const lang = document.documentElement.lang === 'fa' ? 'fa' : 'en'; return (DICT[lang] && DICT[lang][k]) || ''; }
 
-  /* -------------------------
-     SUBSCRIBE FORM (demo)
-     - stores emails in localStorage
-     - simple validation
-  ------------------------- */
-  function loadSubs() {
-    try { return JSON.parse(localStorage.getItem(SUBS_KEY) || '[]'); } catch { return []; }
-  }
-  function saveSubs(list) {
-    try { localStorage.setItem(SUBS_KEY, JSON.stringify(list)); } catch (e) { console.warn(e); }
-  }
-  function updateSubscribersBadge() {
-    if (!subscribersBadge) return;
-    const fake = localStorage.getItem(FAKE_COUNT_KEY) || 0;
-    const count = Number(fake) || loadSubs().length || 0;
-    const lang = document.documentElement.lang === 'fa' ? 'fa' : 'en';
-    subscribersBadge.textContent = (lang === 'fa' ? 'اعضا: ' : 'Subscribers: ') + count;
-  }
+  /* ---------- Subscribe demo ---------- */
+  function loadSubs() { try { return JSON.parse(localStorage.getItem(SUBS_KEY) || '[]'); } catch { return []; } }
+  function saveSubs(list) { try { localStorage.setItem(SUBS_KEY, JSON.stringify(list)); } catch (e) { console.warn(e); } }
+  function updateSubscribersBadge() { if (!subscribersBadge) return; const fake = localStorage.getItem(FAKE_COUNT_KEY) || 0; const count = Number(fake) || loadSubs().length || 0; const lang = document.documentElement.lang === 'fa' ? 'fa' : 'en'; subscribersBadge.textContent = (lang === 'fa' ? 'اعضا: ' : 'Subscribers: ') + count; }
 
   safe(() => {
-    // ensure fake count exists
     if (!localStorage.getItem(FAKE_COUNT_KEY)) localStorage.setItem(FAKE_COUNT_KEY, String(1245));
     updateSubscribersBadge();
-
     if (subscribeForm && emailInput) {
       subscribeForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const email = (emailInput.value || '').trim();
-        const emailRE = /\S+@\S+\.\S+/;
-        if (!emailRE.test(email)) {
-          if (subscribeMsg) { subscribeMsg.textContent = getDictText('invalidEmail'); subscribeMsg.style.color = 'crimson'; }
-          return;
-        }
+        const re = /\S+@\S+\.\S+/;
+        if (!re.test(email)) { if (subscribeMsg) { subscribeMsg.textContent = getDict('invalidEmail'); subscribeMsg.style.color = 'crimson'; } return; }
         const list = loadSubs();
-        if (list.includes(email)) {
-          if (subscribeMsg) { subscribeMsg.textContent = getDictText('alreadySub'); subscribeMsg.style.color = ''; }
-        } else {
-          list.push(email);
-          saveSubs(list);
-          if (subscribeMsg) { subscribeMsg.textContent = getDictText('subscribed'); subscribeMsg.style.color = 'limegreen'; }
+        if (list.includes(email)) { if (subscribeMsg) { subscribeMsg.textContent = getDict('alreadySub'); subscribeMsg.style.color = ''; } } else {
+          list.push(email); saveSubs(list);
+          if (subscribeMsg) { subscribeMsg.textContent = getDict('subscribed'); subscribeMsg.style.color = 'limegreen'; }
           emailInput.value = '';
-          // bump displayed count slightly (local demo)
           const fake = Number(localStorage.getItem(FAKE_COUNT_KEY) || 1245) + 1;
           localStorage.setItem(FAKE_COUNT_KEY, String(fake));
           updateSubscribersBadge();
@@ -389,85 +209,23 @@
     }
   });
 
-  /* -------------------------
-     Accessibility & small helpers
-  ------------------------- */
-  safe(() => {
-    socialCards.forEach((el) => { el.setAttribute('tabindex', '0'); });
-  });
+  /* ---------- Accessibility small fixes ---------- */
+  safe(() => { $$('.social-card').forEach(el => el.setAttribute('tabindex', '0')); });
 
-  /* -------------------------
-     Smooth scroll for anchor links (progressive enhancement)
-  ------------------------- */
-  safe(() => {
-    if ('scrollBehavior' in document.documentElement.style === false) {
-      // load a very small polyfill? (omitted) — fallback: instant jump (default)
-    }
-    // enable click behavior for in-page links
-    $$('.smooth-link').forEach(a => {
-      a.addEventListener('click', (e) => {
-        const href = a.getAttribute('href');
-        if (!href || !href.startsWith('#')) return;
-        const target = document.querySelector(href);
-        if (target) {
-          e.preventDefault();
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          target.focus({ preventScroll: true });
-        }
-      });
-    });
-  });
-
-  /* -------------------------
-     Keyboard shortcuts (t: theme, l: lang, q: qr, /: focus email)
-  ------------------------- */
+  /* ---------- Keyboard shortcuts ---------- */
   safe(() => {
     document.addEventListener('keydown', (e) => {
-      if (e.key === 't') {
-        (themeBtn && themeBtn.click()) || setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
-      } else if (e.key === 'l') {
-        (langBtn && langBtn.click()) || applyLanguage(document.documentElement.lang === 'fa' ? 'en' : 'fa');
-      } else if (e.key === 'q') {
-        if (openQrBtn) openQrBtn.click();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === '/') {
-        if (emailInput) { e.preventDefault(); emailInput.focus(); }
-      }
+      if (e.key === 't') { (themeBtn && themeBtn.click()) || setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); }
+      else if (e.key === 'l') { (langBtn && langBtn.click()) || applyLanguage(document.documentElement.lang === 'fa' ? 'en' : 'fa'); }
+      else if (e.key === 'q') { if (openQrBtn) openQrBtn.click(); }
+      else if ((e.ctrlKey || e.metaKey) && e.key === '/') { if (emailInput) { e.preventDefault(); emailInput.focus(); } }
     });
   });
 
-  /* -------------------------
-     Optional: Service Worker registration (PWA)
-  ------------------------- */
-  safe(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then((reg) => {
-        // silent success
-        // console.log('sw registered', reg);
-      }).catch((err) => {
-        // console.warn('sw reg failed', err);
-      });
-    }
-  });
+  /* ---------- Service worker (optional) ---------- */
+  safe(() => { if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {}); });
 
-  /* -------------------------
-     Light analytics placeholder (non-blocking)
-  ------------------------- */
-  safe(() => {
-    setTimeout(() => {
-      // example: send a beacon or console log
-      // navigator.sendBeacon(...) could be used with a backend
-      console.log('Finovaan: page loaded — theme=', document.documentElement.getAttribute('data-theme'), 'lang=', document.documentElement.lang);
-    }, 1500);
-  });
-
-  /* -------------------------
-     Final init: ensure defaults
-  ------------------------- */
-  safe(() => {
-    // If nothing saved for lang, use browser detection
-    if (!getSavedLang()) applyLanguage(detectBrowserLang());
-    // update badge/language dependent labels again
-    updateSubscribersBadge();
-  });
+  /* ---------- final init ---------- */
+  safe(() => { if (!getSavedLang()) applyLanguage(detectBrowserLang()); updateSubscribersBadge(); });
 
 })();
